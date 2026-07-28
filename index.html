@@ -60,47 +60,113 @@
   .roundlog{text-align:left;max-width:480px;margin:20px auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 18px;}
   .roundlog div{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
   .roundlog div:last-child{border-bottom:none;}
-  button.primary{font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:12px 22px;border-radius:99px;border:none;cursor:pointer;background:var(--brass-bright);color:#241a08;transition:transform .15s ease, background .15s ease;}
-  button.primary:hover{transform:translateY(-1px);background:#f0c987;}
+  button.primary{font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:12px 22px;border-radius:99px;border:none;cursor:pointer;background:var(--brass-bright);color:#241a08;transition:transform .18s cubic-bezier(.2,.8,.2,1), background .18s ease, box-shadow .18s ease;}
+  button.primary:hover{transform:translateY(-2px);background:#f0c987;box-shadow:0 8px 20px rgba(226,184,105,0.22);}
+  button.primary:active{transform:translateY(0) scale(0.97);}
   @media (max-width:600px){.stamp{min-width:85px;padding:8px 10px;} .stamp b{font-size:16px;}}
+
+  /* --- background depth --- */
+  body{background:radial-gradient(ellipse 900px 500px at 50% -10%, #1b2530 0%, var(--ink) 65%);background-attachment:fixed;position:relative;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(238,231,216,0.018) 0px, rgba(238,231,216,0.018) 1px, transparent 1px, transparent 48px),
+      repeating-linear-gradient(90deg, rgba(238,231,216,0.018) 0px, rgba(238,231,216,0.018) 1px, transparent 1px, transparent 48px);
+  }
+  .wrap{position:relative;z-index:1;}
+
+  /* --- landing screen --- */
+  @keyframes landingIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .landing{text-align:center;padding:80px 10px 50px;animation:landingIn .7s ease both;}
+  .landing h1{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(34px,7vw,56px);margin:0 0 16px;}
+  .landing h1 span{color:var(--brass-bright);}
+  .landing-sub{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--teal);margin-bottom:26px;}
+  .landing-desc{max-width:520px;margin:0 auto 34px;color:#c9c2ae;line-height:1.7;font-size:15px;}
+  .landing button{font-size:16px;padding:15px 38px;}
+
+  /* --- clue transitions --- */
+  .clue-body{transition:opacity .3s ease, transform .3s ease;}
+  .clue-body.fade-out{opacity:0;transform:translateY(6px);}
+  @keyframes imgFadeIn{from{opacity:0;}to{opacity:1;}}
+  .photo-frame img{animation:imgFadeIn .45s ease;}
+
+  /* --- timer --- */
+  .timer-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .timer-track{flex:1;height:4px;background:var(--line);border-radius:99px;overflow:hidden;}
+  .timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--brass-bright));border-radius:99px;}
+  .timer-fill.urgent{background:linear-gradient(90deg,var(--red),#e2856f);}
+  .timer-num{font-family:'Fraunces',serif;font-size:13px;color:#9aa3ab;min-width:22px;text-align:right;transition:color .3s ease;}
+  .timer-num.urgent{color:var(--red);}
+  .timeout-chip{color:var(--red);border-color:rgba(193,89,74,0.35);}
+
+  /* --- round progress dots --- */
+  .round-progress{display:flex;gap:9px;justify-content:center;margin:2px 0 18px;}
+  .round-progress .dot{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .3s ease, transform .3s ease, box-shadow .3s ease;}
+  .round-progress .dot.done{background:var(--teal);}
+  .round-progress .dot.active{background:var(--brass-bright);transform:scale(1.35);box-shadow:0 0 0 4px rgba(226,184,105,0.2);}
+
+  /* --- result panel elegant reveal --- */
+  .result{display:block;opacity:0;max-height:0;overflow:hidden;padding-top:0;padding-bottom:0;transition:opacity .4s ease, max-height .45s ease, padding .45s ease;}
+  .result.show{opacity:1;max-height:420px;padding:18px 20px;}
+
+  /* --- tactile feedback --- */
+  .country-btn{transition:transform .15s cubic-bezier(.2,.8,.2,1), border-color .15s ease, background .15s ease;}
+  .country-btn:active{transform:scale(0.96);}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">
+
+  <div id="landingScreen" class="landing">
     <h1>Guess the <span>Country</span></h1>
-    <div class="tag">5 rounds · 60 countries · 7 categories</div>
+    <div class="landing-sub">5 rounds · 60 countries · 7 categories</div>
+    <p class="landing-desc">A hidden country is waiting to be uncovered. Each round gives you clues from geography, currency, neighboring flags, culture, and history — but you've only got 30 seconds per clue before the next one takes over. Guess fast, guess smart.</p>
+    <button class="primary" id="startBtn">Start Game</button>
   </div>
-  <div class="scorebar">
-    <div class="stamp"><b id="roundNo">1 / 5</b><small>Round</small></div>
-    <div class="stamp"><b id="totalScore">0</b><small>Total Score</small></div>
-    <div class="stamp"><b id="lastPts">—</b><small>Last Round</small></div>
-  </div>
-  <div id="game">
-    <div class="clue-head">
-      <span class="cat-badge" id="catBadge">—</span>
-      <span class="clue-count" id="clueCount"></span>
+
+  <div id="mainScreen" style="display:none;">
+    <div class="brand">
+      <h1>Guess the <span>Country</span></h1>
+      <div class="tag">5 rounds · 60 countries · 7 categories</div>
     </div>
-    <div class="photo-frame" id="photoFrame"><div class="loading">Loading clue…</div></div>
-    <p class="hint-text" id="hintText"></p>
-    <div class="wrong-list" id="wrongList"></div>
-    <div class="search-row"><input type="text" id="searchBox" placeholder="Search a country and click…" autocomplete="off"></div>
-    <div class="country-grid" id="countryGrid"></div>
-    <div class="result" id="resultPanel">
-      <span class="pts" id="resultPts"></span>
-      <h3 id="resultTitle"></h3>
-      <p id="resultBody"></p>
-      <button class="primary" id="nextBtn">Next Round →</button>
+    <div class="scorebar">
+      <div class="stamp"><b id="roundNo">1 / 5</b><small>Round</small></div>
+      <div class="stamp"><b id="totalScore">0</b><small>Total Score</small></div>
+      <div class="stamp"><b id="lastPts">—</b><small>Last Round</small></div>
+    </div>
+    <div class="round-progress" id="roundProgress"></div>
+    <div id="game">
+      <div class="clue-body" id="clueBody">
+        <div class="clue-head">
+          <span class="cat-badge" id="catBadge">—</span>
+          <span class="clue-count" id="clueCount"></span>
+        </div>
+        <div class="timer-row">
+          <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+          <span class="timer-num" id="timerNum">30</span>
+        </div>
+        <div class="photo-frame" id="photoFrame"><div class="loading">Loading clue…</div></div>
+        <p class="hint-text" id="hintText"></p>
+      </div>
+      <div class="wrong-list" id="wrongList"></div>
+      <div class="search-row"><input type="text" id="searchBox" placeholder="Search a country and click…" autocomplete="off"></div>
+      <div class="country-grid" id="countryGrid"></div>
+      <div class="result" id="resultPanel">
+        <span class="pts" id="resultPts"></span>
+        <h3 id="resultTitle"></h3>
+        <p id="resultBody"></p>
+        <button class="primary" id="nextBtn">Next Round →</button>
+      </div>
+    </div>
+    <div id="finalScreen" style="display:none;" class="final">
+      <h2>Game Over</h2>
+      <div class="rank" id="rankText"></div>
+      <div class="big" id="finalScore"></div>
+      <p style="color:#9aa3ab;margin-top:6px;">/ 5000 points</p>
+      <div class="roundlog" id="roundLog"></div>
+      <button class="primary" id="restartBtn" style="margin-top:10px;">Play Again</button>
     </div>
   </div>
-  <div id="finalScreen" style="display:none;" class="final">
-    <h2>Game Over</h2>
-    <div class="rank" id="rankText"></div>
-    <div class="big" id="finalScore"></div>
-    <p style="color:#9aa3ab;margin-top:6px;">/ 5000 points</p>
-    <div class="roundlog" id="roundLog"></div>
-    <button class="primary" id="restartBtn" style="margin-top:10px;">Play Again</button>
-  </div>
+
 </div>
 
 <script>
@@ -400,6 +466,55 @@ function shuffle(arr){
   return a;
 }
 
+const CLUE_SECONDS = 30;
+let timerTimeout = null, timerInterval = null;
+
+function startTimer(){
+  clearTimeout(timerTimeout); clearInterval(timerInterval);
+  const fill = document.getElementById('timerFill');
+  const num = document.getElementById('timerNum');
+  let secondsLeft = CLUE_SECONDS;
+  fill.classList.remove('urgent'); num.classList.remove('urgent');
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  void fill.offsetWidth;
+  fill.style.transition = 'width ' + CLUE_SECONDS + 's linear';
+  requestAnimationFrame(() => { fill.style.width = '0%'; });
+  num.textContent = secondsLeft;
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    num.textContent = Math.max(secondsLeft, 0);
+    if(secondsLeft <= 5){ fill.classList.add('urgent'); num.classList.add('urgent'); }
+    if(secondsLeft <= 0) clearInterval(timerInterval);
+  }, 1000);
+  timerTimeout = setTimeout(handleTimeout, CLUE_SECONDS * 1000);
+}
+function stopTimer(){
+  clearTimeout(timerTimeout); clearInterval(timerInterval);
+}
+
+function animateNumber(el, from, to, duration){
+  const start = performance.now();
+  from = Number(from) || 0;
+  function tick(now){
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * eased).toLocaleString('en-US');
+    if(p < 1) requestAnimationFrame(tick); else el.textContent = to.toLocaleString('en-US');
+  }
+  requestAnimationFrame(tick);
+}
+
+function updateProgressDots(){
+  const wrap = document.getElementById('roundProgress');
+  wrap.innerHTML = '';
+  for(let i=0;i<TOTAL_ROUNDS;i++){
+    const d = document.createElement('span');
+    d.className = 'dot' + (i < currentRound ? ' done' : '') + (i === currentRound ? ' active' : '');
+    wrap.appendChild(d);
+  }
+}
+
 function buildPool(code){
   const d = C[code];
   let pool = [];
@@ -423,6 +538,7 @@ function startGame(){
   document.getElementById('finalScreen').style.display = 'none';
   document.getElementById('game').style.display = 'block';
   renderCountryGrid();
+  updateProgressDots();
   loadRound();
 }
 
@@ -452,48 +568,83 @@ function loadRound(){
   document.getElementById('wrongList').innerHTML = '';
   document.getElementById('searchBox').value = '';
   renderCountryGrid();
+  updateProgressDots();
   loadClue();
 }
 
 function loadClue(){
   const clue = cluePool[clueIndex];
   usedClueKeys.add(clue.key);
-  document.getElementById('catBadge').textContent = CATS[clue.cat].label;
-  document.getElementById('clueCount').textContent = 'Clue ' + (clueIndex+1) + ' / ' + cluePool.length;
-  const frame = document.getElementById('photoFrame');
-  const hintEl = document.getElementById('hintText');
+  const body = document.getElementById('clueBody');
+  body.classList.add('fade-out');
 
-  if(clue.cat === 'Neighbor'){
-    frame.innerHTML = '<img class="flag-big-img" src="'+flagUrl(clue.neighbor)+'" alt="neighbor flag">';
-    hintEl.textContent = 'This is the flag of a country near the target country.';
-  } else if(clue.cat === 'Currency'){
-    frame.innerHTML = '<div class="currency-big">💰 '+C[currentCode].c+'</div>';
-    hintEl.textContent = 'This is the official currency of the target country.';
-  } else if(clue.cat === 'Emoji'){
-    frame.innerHTML = '<div class="emoji-big">'+C[currentCode].e+'</div>';
-    hintEl.textContent = 'These three emoji describe the target country.';
-  } else {
-    frame.innerHTML = '<div class="loading">Loading clue…</div>';
-    hintEl.textContent = clue.hint;
-    fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(clue.title))
-      .then(r => r.json())
-      .then(data => {
-        const src = (data.originalimage && data.originalimage.source) || (data.thumbnail && data.thumbnail.source);
-        frame.innerHTML = src ? ('<img src="'+src+'" alt="clue"><div class="cred">Wikipedia</div>') : '<div class="loading">No image found — trust the hint text!</div>';
-      })
-      .catch(() => { frame.innerHTML = '<div class="loading">Image failed to load — trust the hint text!</div>'; });
-  }
+  setTimeout(() => {
+    document.getElementById('catBadge').textContent = CATS[clue.cat].label;
+    document.getElementById('clueCount').textContent = 'Clue ' + (clueIndex+1) + ' / ' + cluePool.length;
+    const frame = document.getElementById('photoFrame');
+    const hintEl = document.getElementById('hintText');
+
+    if(clue.cat === 'Neighbor'){
+      frame.innerHTML = '<img class="flag-big-img" src="'+flagUrl(clue.neighbor)+'" alt="neighbor flag">';
+      hintEl.textContent = 'This is the flag of a country near the target country.';
+    } else if(clue.cat === 'Currency'){
+      frame.innerHTML = '<div class="currency-big">💰 '+C[currentCode].c+'</div>';
+      hintEl.textContent = 'This is the official currency of the target country.';
+    } else if(clue.cat === 'Emoji'){
+      frame.innerHTML = '<div class="emoji-big">'+C[currentCode].e+'</div>';
+      hintEl.textContent = 'These three emoji describe the target country.';
+    } else {
+      frame.innerHTML = '<div class="loading">Loading clue…</div>';
+      hintEl.textContent = clue.hint;
+      fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(clue.title))
+        .then(r => r.json())
+        .then(data => {
+          const src = (data.originalimage && data.originalimage.source) || (data.thumbnail && data.thumbnail.source);
+          frame.innerHTML = src ? ('<img src="'+src+'" alt="clue"><div class="cred">Wikipedia</div>') : '<div class="loading">No image found — trust the hint text!</div>';
+        })
+        .catch(() => { frame.innerHTML = '<div class="loading">Image failed to load — trust the hint text!</div>'; });
+    }
+
+    body.classList.remove('fade-out');
+    startTimer();
+  }, 180);
+}
+
+function failRound(){
+  roundLocked = true;
+  roundLog.push({country: C[currentCode].n, clue: null, pts: 0});
+  document.getElementById('lastPts').textContent = '0';
+  const panel = document.getElementById('resultPanel');
+  panel.className = 'result show fail';
+  document.getElementById('resultPts').textContent = '+0';
+  document.getElementById('resultTitle').innerHTML = flagInlineHtml(currentCode) + ' Not guessed';
+  document.getElementById('resultBody').textContent = 'The correct answer was ' + C[currentCode].n + '.';
+  renderCountryGrid(document.getElementById('searchBox').value);
+}
+
+function handleTimeout(){
+  if(roundLocked) return;
+  stopTimer();
+  const wl = document.getElementById('wrongList');
+  const chip = document.createElement('span');
+  chip.className = 'wrong-chip timeout-chip';
+  chip.textContent = "⏱ Time's up";
+  wl.appendChild(chip);
+  clueIndex++;
+  if(clueIndex >= cluePool.length){ failRound(); } else { loadClue(); }
 }
 
 function handleGuess(code, name){
   if(roundLocked) return;
+  stopTimer();
   if(code === currentCode){
     roundLocked = true;
     const pts = Math.max(100, Math.round(1000 * Math.pow(0.75, clueIndex)));
+    const prevTotal = totalScore;
     totalScore += pts;
     roundLog.push({country: C[currentCode].n, clue: clueIndex+1, pts});
-    document.getElementById('totalScore').textContent = totalScore.toLocaleString('en-US');
-    document.getElementById('lastPts').textContent = pts.toLocaleString('en-US');
+    animateNumber(document.getElementById('totalScore'), prevTotal, totalScore, 650);
+    animateNumber(document.getElementById('lastPts'), 0, pts, 450);
     const panel = document.getElementById('resultPanel');
     panel.className = 'result show correct';
     document.getElementById('resultPts').textContent = '+' + pts;
@@ -509,19 +660,7 @@ function handleGuess(code, name){
     chip.innerHTML = flagInlineHtml(code) + name;
     wl.appendChild(chip);
     clueIndex++;
-    if(clueIndex >= cluePool.length){
-      roundLocked = true;
-      roundLog.push({country: C[currentCode].n, clue: null, pts: 0});
-      document.getElementById('lastPts').textContent = '0';
-      const panel = document.getElementById('resultPanel');
-      panel.className = 'result show fail';
-      document.getElementById('resultPts').textContent = '+0';
-      document.getElementById('resultTitle').innerHTML = flagInlineHtml(currentCode) + ' Not guessed';
-      document.getElementById('resultBody').textContent = 'The correct answer was ' + C[currentCode].n + '.';
-      renderCountryGrid(document.getElementById('searchBox').value);
-    } else {
-      loadClue();
-    }
+    if(clueIndex >= cluePool.length){ failRound(); } else { loadClue(); }
   }
 }
 
@@ -531,6 +670,7 @@ document.getElementById('nextBtn').addEventListener('click', function(){
 });
 
 function showFinal(){
+  stopTimer();
   document.getElementById('game').style.display = 'none';
   document.getElementById('finalScreen').style.display = 'block';
   document.getElementById('finalScore').textContent = totalScore.toLocaleString('en-US');
@@ -551,7 +691,11 @@ function showFinal(){
 }
 
 document.getElementById('restartBtn').addEventListener('click', startGame);
-startGame();
+document.getElementById('startBtn').addEventListener('click', function(){
+  document.getElementById('landingScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  startGame();
+});
 </script>
 </body>
 </html>
